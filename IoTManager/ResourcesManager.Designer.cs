@@ -61,7 +61,7 @@ namespace IoTManager {
         }
         
         /// <summary>
-        /// Wyszukuje zlokalizowany ciąg podobny do ciągu device-errors-queue.
+        /// Wyszukuje zlokalizowany ciąg podobny do ciągu .
         /// </summary>
         internal static string deviceErrorQueue {
             get {
@@ -79,7 +79,7 @@ namespace IoTManager {
         }
         
         /// <summary>
-        /// Wyszukuje zlokalizowany ciąg podobny do ciągu production-kpi-queue.
+        /// Wyszukuje zlokalizowany ciąg podobny do ciągu .
         /// </summary>
         internal static string KPIQueueName {
             get {

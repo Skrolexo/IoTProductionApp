@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="deviceErrorQueue" xml:space="preserve">
-    <value>device-errors-queue</value>
+    <value />
     <comment>Nazwa kolejki utworzonej w Service Bus Namespace do błędów.</comment>
   </data>
   <data name="iotHubConnectionString" xml:space="preserve">
@@ -126,7 +126,7 @@
     <comment>Connection String  do IoT Hub na platformie Azure.</comment>
   </data>
   <data name="KPIQueueName" xml:space="preserve">
-    <value>production-kpi-queue</value>
+    <value />
     <comment>Nazwa kolejki utworzonej w Service Bus Namespace do zbierania wartości KPI urządzeń.</comment>
   </data>
   <data name="serviceBusConnectionString" xml:space="preserve">
