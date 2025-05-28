@@ -1,0 +1,46 @@
+--kpi calculations
+SELECT
+    System.Timestamp AS WindowEndTime,
+    IoTHub.ConnectionDeviceId,
+    (SUM(GoodCount) * 100.0 / (SUM(GoodCount) + SUM(BadCount))) AS KPI
+INTO
+    [productionkpiqueue]
+FROM
+    [UL-zajecia-azure-2025]
+WHERE
+    ProductionStatus = 1
+GROUP BY
+    IoTHub.ConnectionDeviceId,
+    TumblingWindow(minute, 5)
+HAVING
+    SUM(GoodCount) + SUM(BadCount) > 0;
+
+-- Temperature saving in contener
+SELECT
+  System.Timestamp() AS WindowEndTime,
+    IoTHub.ConnectionDeviceId,
+    MIN(Temperature) AS minTemp, 
+    MAX(Temperature) AS maxTemp,
+    AVG(Temperature) AS avgTemp
+INTO
+    [temperaturedata]
+FROM
+    [UL-zajecia-azure-2025]
+GROUP BY
+    IoTHub.ConnectionDeviceId,
+    HoppingWindow(minute,5,1);
+
+-- Error summing
+SELECT
+   System.Timestamp() AS WindowEndTime,
+    IoTHub.ConnectionDeviceId,
+    SUM(NewError) as sumErrors
+INTO
+    [device-errors-queue]
+FROM
+    [UL-zajecia-azure-2025]
+WHERE 
+    NewError IS NOT null
+GROUP BY
+    IoTHub.ConnectionDeviceId,
+    SlidingWindow(minute,1)
