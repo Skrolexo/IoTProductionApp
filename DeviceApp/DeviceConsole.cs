@@ -21,14 +21,14 @@ public class DeviceConsole
             ResourcesDevice.Device3ConnectionString
         };
 
-        // Start klienta OPC UA
+
         using var clientOpc = new OpcClient(ResourcesDevice.opcClientURL);
         clientOpc.Connect();
 
         var availableMachines = FetchAvailableMachines(clientOpc, iotConnections);
         var machineAgents = new List<DeviceProduction>();
 
-        // Połącz każdą maszynę z IoT Hub
+
         for (int i = 0; i < availableMachines.Count; i++)
         {
             var iotClient = DeviceClient.CreateFromConnectionString(iotConnections[i], Microsoft.Azure.Devices.Client.TransportType.Mqtt);
@@ -42,7 +42,6 @@ public class DeviceConsole
             System.Console.WriteLine($"\n[INFO] {availableMachines[i].DisplayName} is now registered in IoT Hub as agent.");
         }
 
-        // Pętla czytania i wysyłania danych
         while (true)
         {
             if (index >= availableMachines.Count)
