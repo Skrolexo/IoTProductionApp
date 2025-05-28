@@ -57,6 +57,12 @@ namespace DeviceApp
             _statusCache = await GetReportedStatusAsync();
         }
 
+        public void HandleOpcData(IEnumerable<OpcValue> data)
+        {
+            SendTelemetry(data);
+            _ = UpdateTwinAsync(data);
+        }
+
         private async Task OnTwinUpdate(TwinCollection desired, object ctx)
         {
             Console.WriteLine($"Twin changed: {JsonConvert.SerializeObject(desired)}");
