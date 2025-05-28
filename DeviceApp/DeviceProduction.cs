@@ -175,6 +175,17 @@ namespace DeviceApp
             var data = new { NewError = errorList.Length };
             await SendMessage(data);
         }
+
+        public async Task SendMessage(object data)
+        {
+            var json = JsonConvert.SerializeObject(data);
+            var msg = new Message(Encoding.UTF8.GetBytes(json))
+            {
+                ContentType = MediaTypeNames.Application.Json,
+                ContentEncoding = "utf-8"
+            };
+            await _client.SendEventAsync(msg);
+        }
         private async void SendTelemetry(IEnumerable<OpcValue> data)
         {
             var payload = new
@@ -186,17 +197,6 @@ namespace DeviceApp
                 BadCount = data.ElementAt(11).Value
             };
             await SendMessage(payload);
-        }
-
-        public async Task SendMessage(object data)
-        {
-            var json = JsonConvert.SerializeObject(data);
-            var msg = new Message(Encoding.UTF8.GetBytes(json))
-            {
-                ContentType = MediaTypeNames.Application.Json,
-                ContentEncoding = "utf-8"
-            };
-            await _client.SendEventAsync(msg);
         }
         private async Task SendMailAsync(string errorDesc)
         {
