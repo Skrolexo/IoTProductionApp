@@ -1,9 +1,15 @@
-﻿using Azure.Communication.Email;
+﻿using Azure;
+using Azure.Communication.Email;
 using Microsoft.Azure.Devices.Client;
+using Microsoft.Azure.Devices.Shared;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Opc.UaFx;
 using Opc.UaFx.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -88,6 +94,126 @@ namespace DeviceApp
             Console.WriteLine($"Unknown method: {req.Name}");
             await Task.Delay(500);
             return new MethodResponse(0);
+        }
+        private void PrintMessage(Message message)
+        {
+            var body = Encoding.ASCII.GetString(message.GetBytes());
+            Console.WriteLine($"Received message: {body}");
+            int i = 0;
+            foreach (var prop in message.Properties)
+            {
+                Console.WriteLine($"Property {i++}: {prop.Key} = {prop.Value}");
+            }
+        }
+
+        public async Task UpdateTwinAsync(IEnumerable<OpcValue> data)
+        {
+            var reportedProps = new TwinCollection();
+            reportedProps["ProductionRate"] = data.ElementAt(3).Value;
+
+            var deviceStatus = (int)data.ElementAt(13).Value;
+            if (deviceStatus != _statusCache)
+            {
+                NotifyNewError(_statusCache, deviceStatus);
+                NotifyStatusChange(_statusCache, deviceStatus);
+                _statusCache = deviceStatus;
+
+                var flags = Enum.GetValues(typeof(DeviceStatus))
+                    .Cast<DeviceStatus>()
+                    .Where(f => f != DeviceStatus.None && ((DeviceStatus)deviceStatus).HasFlag(f))
+                    .Select(f => f.ToString())
+                    .ToList();
+
+                reportedProps["DeviceStatus"] = new JArray(flags);
+            }
+            await _client.UpdateReportedPropertiesAsync(reportedProps);
+        }
+
+        public async Task<int> GetReportedStatusAsync()
+        {
+            var twin = await _client.GetTwinAsync();
+            var reported = twin.Properties.Reported;
+
+            if (reported.Contains("DeviceStatus"))
+            {
+                var array = reported["DeviceStatus"] as JArray;
+                var list = array?.ToObject<List<string>>() ?? new List<string>();
+                int statusNum = 0;
+                foreach (var s in list)
+                {
+                    if (Enum.TryParse<DeviceStatus>(s, out var flag))
+                        statusNum |= (int)flag;
+                }
+                return statusNum;
+            }
+            return 0;
+        }
+
+        private async void NotifyStatusChange(int oldStatus, int newStatus)
+        {
+            var msg = new
+            {
+                Message = $"Device status update: {(DeviceStatus)oldStatus} → {(DeviceStatus)newStatus}"
+            };
+            await SendMessage(msg);
+        }
+
+        private async void NotifyNewError(int oldStatus, int newStatus)
+        {
+            int newlyAdded = newStatus & ~oldStatus;
+            var errorList = Enum.GetValues(typeof(DeviceStatus))
+                .Cast<DeviceStatus>()
+                .Where(flag => (newlyAdded & (int)flag) != 0)
+                .Select(flag => flag.ToString())
+                .ToArray();
+
+            if (errorList.Length > 0)
+            {
+                await SendMailAsync(string.Join(", ", errorList));
+            }
+
+            var data = new { NewError = errorList.Length };
+            await SendMessage(data);
+        }
+        private async void SendTelemetry(IEnumerable<OpcValue> data)
+        {
+            var payload = new
+            {
+                ProductionStatus = data.ElementAt(1).Value,
+                WorkerId = data.ElementAt(5).Value,
+                Temperature = data.ElementAt(7).Value,
+                GoodCount = data.ElementAt(9).Value,
+                BadCount = data.ElementAt(11).Value
+            };
+            await SendMessage(payload);
+        }
+
+        public async Task SendMessage(object data)
+        {
+            var json = JsonConvert.SerializeObject(data);
+            var msg = new Message(Encoding.UTF8.GetBytes(json))
+            {
+                ContentType = MediaTypeNames.Application.Json,
+                ContentEncoding = "utf-8"
+            };
+            await _client.SendEventAsync(msg);
+        }
+        private async Task SendMailAsync(string errorDesc)
+        {
+            try
+            {
+                var subject = $"Error occurred on {_uaDeviceName}";
+                var body = $"Errors detected: {errorDesc}";
+                var content = new EmailContent(subject) { PlainText = body };
+                var emailMsg = new EmailMessage(_fromEmail, _toEmail, content);
+
+                await _emailClient.SendAsync(Azure.WaitUntil.Completed, emailMsg);
+                Console.WriteLine($"Email sent: {errorDesc}");
+            }
+            catch (RequestFailedException ex)
+            {
+                Console.WriteLine("Email failed: " + ex.Message);
+            }
         }
 
     }
