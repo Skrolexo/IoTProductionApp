@@ -1,0 +1,62 @@
+# Foldery systemowe Visual Studio
+.vs/
+*.user
+*.suo
+
+# Foldery buildów
+bin/
+obj/
+[Bb]uild/
+[Bb]uilds/
+
+# Pliki tymczasowe
+*.tmp
+*.log
+*.vspscc
+*.vssscc
+*.ncb
+*.cache
+*.dbmdl
+*.dbproj.schemaview
+
+# Pliki testów
+TestResults/
+*.TestResults/
+
+# Pliki nuget
+*.nupkg
+.nuget/
+packages/
+*.snupkg
+
+# Pliki konfiguracji środowiska
+*.env
+.env.local
+
+# Pliki publish
+publish/
+out/
+
+# Pliki konfiguracyjne Rider/Resharper
+.idea/
+*.DotSettings.user
+
+# Secret i temp files
+secrets.json
+
+# Foldery i pliki dla Azure
+*.azurePubxml
+*.PublishProfiles/
+ServiceConfigurations/
+ServiceDefinitions/
+
+# Local history VSCode
+.history/
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Folder z cache VS Code
+.vscode/
